@@ -1,17 +1,17 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { sendMessageRequest } from '../api/chatApi'
-import { Conversation, Message, MessageListResponse } from '../types'
+import { Conversation, Message, MessageListResponse, SendMessageResponse } from '../types'
 import { messagesKey } from './useMessages'
-
-interface Context {
-  previousMessages?: MessageListResponse
-  tempId?: string
-}
 
 export function useSendMessage(conversation: Conversation | null) {
   const queryClient = useQueryClient()
 
-  const mutation = useMutation({
+  const mutation = useMutation<
+    SendMessageResponse,
+    Error,
+    string,
+    { previousMessages?: MessageListResponse; tempId?: string }
+  >({
     mutationFn: (text: string) => {
       if (!conversation) throw new Error('Conversation is required')
       return sendMessageRequest(conversation.id, text)
