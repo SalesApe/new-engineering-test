@@ -34,7 +34,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "ai_chat.urls"
+ROOT_URLCONF = "salesape_test.urls"
 
 TEMPLATES = [
     {
@@ -52,8 +52,8 @@ TEMPLATES = [
     }
 ]
 
-WSGI_APPLICATION = "ai_chat.wsgi.application"
-ASGI_APPLICATION = "ai_chat.asgi.application"
+WSGI_APPLICATION = "salesape_test.wsgi.application"
+ASGI_APPLICATION = "salesape_test.asgi.application"
 
 DATABASES = {
     "default": {
