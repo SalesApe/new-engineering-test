@@ -4,7 +4,6 @@ from typing import Any
 
 from django.shortcuts import get_object_or_404
 from django.db.models import QuerySet
-from django.conf import settings
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -77,9 +76,11 @@ class MessageListCreateView(APIView):
         # Persist user message
         user_msg = Message.objects.create(conversation=conv, role=Message.ROLE_USER, text=text)
 
-        # Build short history context (last 10 messages)
+        # Build short history context (last 10 messages excluding the new user message)
         history = list(
-            conv.messages.order_by("-sequence").values("role", "text")[:10]
+            conv.messages.exclude(pk=user_msg.pk)
+            .order_by("-sequence")
+            .values("role", "text")[:10]
         )[::-1]
 
         try:
