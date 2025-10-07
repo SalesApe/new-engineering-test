@@ -10,13 +10,7 @@ interface ChatPaneProps {
 
 export const ChatPane = ({ conversation }: ChatPaneProps) => {
   const conversationId = conversation?.id ?? null
-  const {
-    messages,
-    isLoading,
-    isFetching,
-    error,
-    refetch,
-  } = useMessages(conversationId)
+  const { messages, isLoading, isFetching, error, refetch } = useMessages(conversationId)
 
   const { mutateAsync: sendMessage, isPending: isSending } = useSendMessage(conversation)
 
@@ -44,9 +38,7 @@ export const ChatPane = ({ conversation }: ChatPaneProps) => {
             Last updated {new Date(conversation.updated_at).toLocaleString()}
           </p>
         </div>
-        {(isFetching || isLoading) && (
-          <span className="text-xs text-gray-400">Refreshing…</span>
-        )}
+        {(isFetching || isLoading) && <span className="text-xs text-gray-400">Refreshing…</span>}
       </header>
       <MessageList messages={messages} isLoading={isLoading} error={error} onRetry={refetch} />
       <MessageComposer onSend={handleSend} isSending={isSending} />

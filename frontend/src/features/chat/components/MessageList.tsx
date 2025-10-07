@@ -46,7 +46,9 @@ export const MessageList = ({ messages, isLoading, error, onRetry }: MessageList
           <article
             key={message.tempId ?? message.id}
             className={`max-w-2xl rounded-lg border px-3 py-2 text-sm shadow-sm ${
-              message.role === 'user' ? 'self-end border-blue-200 bg-blue-50' : 'self-start border-gray-200 bg-gray-50'
+              message.role === 'user'
+                ? 'self-end border-blue-200 bg-blue-50'
+                : 'self-start border-gray-200 bg-gray-50'
             } ${message.pending ? 'opacity-70' : ''}`}
           >
             <header className="mb-1 flex items-center gap-2 text-xs text-gray-500">

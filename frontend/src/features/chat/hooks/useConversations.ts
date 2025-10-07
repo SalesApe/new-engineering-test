@@ -1,8 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  createConversationRequest,
-  fetchConversations,
-} from '../api/chatApi'
+import { createConversationRequest, fetchConversations } from '../api/chatApi'
 import { Conversation } from '../types'
 
 const CONVERSATIONS_QUERY_KEY = ['conversations']
@@ -10,13 +7,7 @@ const CONVERSATIONS_QUERY_KEY = ['conversations']
 export function useConversations() {
   const queryClient = useQueryClient()
 
-  const {
-    data,
-    isLoading,
-    error,
-    refetch,
-    isFetching,
-  } = useQuery({
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: CONVERSATIONS_QUERY_KEY,
     queryFn: fetchConversations,
   })

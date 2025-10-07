@@ -14,11 +14,8 @@ const App = () => {
     createConversation,
   } = useConversations()
 
-  const {
-    selectedConversation,
-    setSelectedConversationId,
-    selectedConversationId,
-  } = useConversationSelection(conversations ?? [])
+  const { selectedConversation, setSelectedConversationId, selectedConversationId } =
+    useConversationSelection(conversations ?? [])
 
   const sidebarState = useMemo(
     () => ({

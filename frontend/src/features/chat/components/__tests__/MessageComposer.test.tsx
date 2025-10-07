@@ -18,7 +18,9 @@ describe('MessageComposer', () => {
     const onSend = vi.fn()
     render(<MessageComposer onSend={onSend} isSending={false} />)
 
-    fireEvent.submit(screen.getByRole('button', { name: /send/i }).closest('form') as HTMLFormElement)
+    fireEvent.submit(
+      screen.getByRole('button', { name: /send/i }).closest('form') as HTMLFormElement
+    )
 
     expect(await screen.findByText(/cannot be empty/i)).toBeInTheDocument()
     expect(onSend).not.toHaveBeenCalled()

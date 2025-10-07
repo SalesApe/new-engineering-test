@@ -1,26 +1,30 @@
 # The Task
 
-You have been given a simple Django-based chat application that connects users to an AI assistant. Currently, the system handles basic conversations but provides no way to understand whether users find the AI responses helpful or not. 
+You have been given a simple Django-based chat application that connects users to an AI assistant. Currently, the system handles basic conversations but provides no way to understand whether users find the AI responses helpful or not.
 
 Your task is to build a mechanism that captures user feedback and transforms that data into actionable insights. Additionally, build a screen where we can see those insights and statistics.
 
 How else can you improve the application?
 
 ## Guidelines
+
 1. Please fork this repository and send us the url.
 2. We expect you to spend roughly 60 minutes.
 3. We want to see how you think and your decision making process.
-4. We expect you to use AI heavily to help with this task.
+4. We expect you to use AI to help with this task.
 5. If you have any issues, please reach out to us.
 
 ## Deliverables
+
 1. Working Code with setup instructions
 2. AI_PROMPTS.md - All prompts used, organized chronologically
 3. DECISIONS.md - What decisions you made and why. This **should not** be AI generated. Use your own words.
 
 ## Technical Overview
+
 - Backend: Django 5 + DRF, SQLite for local dev
-- Frontend: Vite + TypeScript + Tailwind, built to `static/app/`
+- Frontend: React + TypeScript + Tailwind (Vite build -> `static/app/`)
+- Data fetching: TanStack Query with optimistic updates and polling
 - AI: Google Gemini via `google-generativeai` (no streaming)
 
 ### Prerequisites
@@ -38,15 +42,19 @@ How else can you improve the application?
    - Set `GEMINI_API_KEY` in `.env`
 3. Initialize DB
    - `make migrate`
-4. Build frontend assets
+4. Install frontend deps
+   - `make frontend-install`
+5. Build frontend assets
    - `make build-frontend`
 
 ### Run (development)
 
-- Start Django dev server:
+- Start the Django API + serve built frontend:
   - `make run`
-  - Requires `GEMINI_API_KEY` to be set; the server exits with an error if missing.
-- Open `http://127.0.0.1:8000/` — the Vite-built app is served via Django templates.
+  - Requires `GEMINI_API_KEY` to be set; the server exits if missing.
+- React dev server (HMR):
+  - `make frontend-dev` (use alongside Django API at `127.0.0.1:8000`)
+- Open `http://127.0.0.1:8000/` — the Django template loads the built React bundle from `static/app/`.
 
 ### APIs
 
@@ -56,9 +64,11 @@ How else can you improve the application?
 - `GET /api/conversations/{id}/messages?since=&limit=` → list messages after sequence
 - `POST /api/conversations/{id}/messages/` → send user message; returns `{ user_message, ai_message }`
 
-### Tests
+### Tests & Quality
 
-- `make test`
+- Backend: `make test`
+- Frontend unit: `make frontend-test`
+- Lint (frontend): `make lint`
 
 ### Notes
 
