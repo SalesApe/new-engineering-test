@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Conversation, Message
+from .models import Conversation, Message, Feedback
 
 
 class ConversationSerializer(serializers.ModelSerializer):
@@ -9,10 +9,19 @@ class ConversationSerializer(serializers.ModelSerializer):
         fields = ["id", "title", "created_at", "updated_at"]
 
 
+class FeedbackSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Feedback
+        fields = ["id", "message", "rating", "comment", "created_at"]
+        read_only_fields = ["id", "created_at"]
+
+
 class MessageSerializer(serializers.ModelSerializer):
+    feedback = FeedbackSerializer(read_only=True)
+
     class Meta:
         model = Message
-        fields = ["id", "conversation", "role", "text", "created_at", "sequence"]
+        fields = ["id", "conversation", "role", "text", "created_at", "sequence", "feedback"]
         read_only_fields = ["id", "created_at", "sequence", "conversation", "role"]
 
 
@@ -24,4 +33,9 @@ class CreateMessageSerializer(serializers.Serializer):
         if not text:
             raise serializers.ValidationError("Message text cannot be empty.")
         return text
+
+
+class CreateFeedbackSerializer(serializers.Serializer):
+    rating = serializers.ChoiceField(choices=["positive", "negative"])
+    comment = serializers.CharField(required=False, allow_blank=True, max_length=500)
 
