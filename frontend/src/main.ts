@@ -122,58 +122,78 @@ async function loadMessages() {
 let isSending = false
 
 async function sendMessage(text: string) {
-  if (!state.current || isSending) return
+  if (isSending) return
   
   isSending = true
+  
+  // Add optimistic user message immediately for better UX
   const tempId = `tmp-${Date.now()}`
-  const optimistic: Message = {
+  const optimisticUserMsg: Message = {
     id: -1,
-    conversation: state.current.id,
+    conversation: state.current?.id || -1,
     role: 'user',
     text,
     created_at: new Date().toISOString(),
-    sequence: 0,
+    sequence: state.lastSeq + 1,
     tempId,
     pending: true,
   }
-  state.messages.push(optimistic)
+  
+  // If no conversation exists, create one first
+  if (!state.current) {
+    try {
+      // Auto-create a conversation with the message text as title (truncated)
+      const title = text.length > 30 ? text.substring(0, 30) + '...' : text
+      await createConversation(title)
+      // Update the conversation ID in the optimistic message
+      optimisticUserMsg.conversation = state.current!.id
+    } catch (err) {
+      console.error('Failed to create conversation:', err)
+      isSending = false
+      alert('Failed to create conversation. Please try again.')
+      return
+    }
+  }
+  
+  // Add optimistic user message to the UI
+  state.messages.push(optimisticUserMsg)
   render()
   scrollChatToBottom()
+  
+  // Temporarily pause polling to avoid race conditions
+  stopPolling()
 
   try {
+    // Show AI is typing indicator
+    const aiTypingMsg: Message = {
+      id: -2,
+      conversation: state.current!.id,
+      role: 'ai',
+      text: 'Thinking...',
+      created_at: new Date().toISOString(),
+      sequence: state.lastSeq + 2,
+      tempId: 'typing-indicator',
+      pending: true,
+    }
+    state.messages.push(aiTypingMsg)
+    render()
+    scrollChatToBottom()
+    
     const res = await api<{ user_message: Message; ai_message: Message }>(
-      `conversations/${state.current.id}/messages/`,
+      `conversations/${state.current!.id}/messages/`,
       {
         method: 'POST',
         body: JSON.stringify({ text }),
       }
     )
     
-    // Remove optimistic message first
-    const idx = state.messages.findIndex((m) => m.tempId === tempId)
-    if (idx >= 0) {
-      state.messages.splice(idx, 1)
-    }
+    // Remove optimistic messages and typing indicator
+    state.messages = state.messages.filter(m => 
+      !m.tempId && m.id !== res.user_message.id && m.id !== res.ai_message.id
+    )
     
-    // Build new messages array to add (avoid duplicates)
-    const newMessages: Message[] = []
-    
-    // Add user message if not already present
-    const existingUserIdx = state.messages.findIndex((m) => m.id === res.user_message.id)
-    if (existingUserIdx === -1) {
-      newMessages.push(res.user_message)
-    }
-    
-    // Add AI message if not already present
-    const existingAiIdx = state.messages.findIndex((m) => m.id === res.ai_message.id)
-    if (existingAiIdx === -1) {
-      newMessages.push(res.ai_message)
-    }
-    
-    // Add all new messages at once (atomic operation)
-    if (newMessages.length > 0) {
-      state.messages.push(...newMessages)
-    }
+    // Add real messages
+    state.messages.push(res.user_message, res.ai_message)
     
     // Update lastSeq to the AI message sequence (highest)
     state.lastSeq = res.ai_message.sequence
@@ -187,12 +207,13 @@ async function sendMessage(text: string) {
     render()
     scrollChatToBottom()
   } catch (err) {
-    const idx = state.messages.findIndex((m) => m.tempId === tempId)
-    if (idx >= 0) state.messages.splice(idx, 1)
+    // No need to remove optimistic message since we never added it
     render()
     alert('Failed to send message. Please try again.')
   } finally {
     isSending = false
+    // Restart polling after message is sent
+    startPolling()
   }
 }
 
@@ -252,7 +273,7 @@ async function loadInsights() {
 
 function startPolling() {
   stopPolling()
-  state.pollTimer = setInterval(loadMessages, 3000)
+  state.pollTimer = setInterval(loadMessages, 5000) // Increased polling interval for better performance
 }
 function stopPolling() {
   if (state.pollTimer) clearInterval(state.pollTimer)
@@ -422,6 +443,7 @@ function render() {
       return
     }
     input.value = ''
+    // Send message even if no conversation exists yet
     await sendMessage(text)
   })
 }
