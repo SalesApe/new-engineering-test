@@ -13,19 +13,19 @@ def test_create_conversation(client):
 
 
 @pytest.mark.django_db
-def test_message_flow_with_mocked_gemini(client, monkeypatch):
+def test_message_flow_with_mocked_ai(client, monkeypatch):
     # Create conversation
     resp = client.post("/api/conversations/", data=json.dumps({}), content_type="application/json")
     conv = resp.json()
 
-    # Mock gemini
-    from chat.services import gemini
+    # Mock ai_service
+    from chat.services import ai_service
 
     def fake_generate_reply(history, prompt, timeout_s=10):
         assert prompt == "Hello"
         return "Hi there!"
 
-    monkeypatch.setattr(gemini, "generate_reply", fake_generate_reply)
+    monkeypatch.setattr(ai_service, "generate_reply", fake_generate_reply)
 
     # Send message
     url = f"/api/conversations/{conv['id']}/messages/"
@@ -41,3 +41,88 @@ def test_message_flow_with_mocked_gemini(client, monkeypatch):
     assert messages.status_code == 200
     data = messages.json()
     assert len(data["results"]) == 2
+
+
+@pytest.mark.django_db
+def test_feedback_submission(client, monkeypatch):
+    # Create conversation
+    resp = client.post("/api/conversations/", data=json.dumps({}), content_type="application/json")
+    conv = resp.json()
+
+    # Mock ai_service
+    from chat.services import ai_service
+
+    def fake_generate_reply(history, prompt, timeout_s=10):
+        return "Test response"
+
+    monkeypatch.setattr(ai_service, "generate_reply", fake_generate_reply)
+
+    # Send message to get an AI response
+    url = f"/api/conversations/{conv['id']}/messages/"
+    send = client.post(url, data=json.dumps({"text": "Hello"}), content_type="application/json")
+    ai_message = send.json()["ai_message"]
+
+    # Submit positive feedback
+    feedback_url = f"/api/messages/{ai_message['id']}/feedback/"
+    feedback_resp = client.post(
+        feedback_url,
+        data=json.dumps({"rating": "positive"}),
+        content_type="application/json"
+    )
+    assert feedback_resp.status_code == 201
+    feedback_data = feedback_resp.json()
+    assert feedback_data["rating"] == "positive"
+    assert feedback_data["message"] == ai_message["id"]
+
+    # Update feedback to negative
+    feedback_resp2 = client.post(
+        feedback_url,
+        data=json.dumps({"rating": "negative", "comment": "Not helpful"}),
+        content_type="application/json"
+    )
+    assert feedback_resp2.status_code == 200
+    feedback_data2 = feedback_resp2.json()
+    assert feedback_data2["rating"] == "negative"
+    assert feedback_data2["comment"] == "Not helpful"
+
+
+@pytest.mark.django_db
+def test_insights_endpoint(client, monkeypatch):
+    # Create conversation
+    resp = client.post("/api/conversations/", data=json.dumps({}), content_type="application/json")
+    conv = resp.json()
+
+    # Mock ai_service
+    from chat.services import ai_service
+
+    def fake_generate_reply(history, prompt, timeout_s=10):
+        return "Test response"
+
+    monkeypatch.setattr(ai_service, "generate_reply", fake_generate_reply)
+
+    # Send message and get AI response
+    url = f"/api/conversations/{conv['id']}/messages/"
+    send = client.post(url, data=json.dumps({"text": "Hello"}), content_type="application/json")
+    ai_message = send.json()["ai_message"]
+
+    # Submit feedback
+    feedback_url = f"/api/messages/{ai_message['id']}/feedback/"
+    client.post(
+        feedback_url,
+        data=json.dumps({"rating": "positive"}),
+        content_type="application/json"
+    )
+
+    # Get insights
+    insights_url = "/api/insights/"
+    insights_resp = client.get(insights_url)
+    assert insights_resp.status_code == 200
+    insights_data = insights_resp.json()
+    
+    assert "overview" in insights_data
+    assert insights_data["overview"]["total_ai_messages"] == 1
+    assert insights_data["overview"]["total_feedback"] == 1
+    assert insights_data["overview"]["positive_feedback"] == 1
+    assert insights_data["overview"]["satisfaction_rate"] == 100.0
+    assert "daily_feedback" in insights_data
+    assert "recent_feedback" in insights_data

@@ -21,16 +21,16 @@ def generate_reply(history: List[Dict[str, str]], prompt: str, timeout_s: int = 
     """
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        raise GeminiServiceError("Gemini API key is missing; set GEMINI_API_KEY in .env")
+        raise GeminiServiceError("Gemini API key is missing or not set in .env")
 
     try:
         import google.generativeai as genai
     except Exception as e:  # pragma: no cover - import error path
         raise GeminiServiceError(f"Gemini client not available: {e}")
 
-    genai.configure(api_key=api_key)
-    model_name = _get_model_name()
     try:
+        genai.configure(api_key=api_key)
+        model_name = _get_model_name()
         model = genai.GenerativeModel(model_name)
         # Build messages in Gemini format
         messages = []

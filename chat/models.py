@@ -57,3 +57,24 @@ class Message(models.Model):
     def __str__(self) -> str:  # pragma: no cover
         return f"{self.conversation_id}#{self.sequence}:{self.role}"
 
+
+class Feedback(models.Model):
+    """Track user feedback on AI messages"""
+    RATING_POSITIVE = "positive"
+    RATING_NEGATIVE = "negative"
+    RATING_CHOICES = (
+        (RATING_POSITIVE, "Positive"),
+        (RATING_NEGATIVE, "Negative"),
+    )
+
+    message = models.OneToOneField(Message, related_name="feedback", on_delete=models.CASCADE)
+    rating = models.CharField(max_length=10, choices=RATING_CHOICES)
+    comment = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:  # pragma: no cover
+        return f"Feedback for Message {self.message_id}: {self.rating}"
+
