@@ -13,7 +13,7 @@ def main() -> None:
             sys.stderr.write("Error: GEMINI_API_KEY is required to run the server. Set it in .env.\n")
             sys.exit(1)
 
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ai_chat.settings")
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "salesape_test.settings")
     from django.core.management import execute_from_command_line
     execute_from_command_line(sys.argv)
 
